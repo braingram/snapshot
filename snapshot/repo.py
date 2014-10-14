@@ -19,7 +19,9 @@ import uuid
 
 class Repository(object):
     def resolve_local(self, filename):
+        # use the breadcrumb to resolve this
         pass
 
     def resolve_remote(self, filename):
+        # use the repo config, archive and filename to find this
         pass

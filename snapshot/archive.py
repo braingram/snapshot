@@ -11,4 +11,5 @@ These basically just transform filenames
 
 
 class Archive(object):
-    pass
+    def resolve_remote(self, filename):
+        pass

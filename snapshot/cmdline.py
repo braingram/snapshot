@@ -29,6 +29,12 @@ archive arguments
 """
 
 import argparse
+import os
+import time
+import uuid
+
+
+from . import breadcrumb
 
 
 def build_argument_parser():
@@ -41,8 +47,11 @@ def build_argument_parser():
         '-s', '--status', action='store_true', default=False,
         help="get the status of a file")
     parser.add_argument(
-        '-r', '--recover', action='store_true', default=False,
+        '-r', '--recover', default=False, const=True, nargs="?",
         help="recover a file or files")
+    parser.add_argument(
+        '-f', '--force', action='store_true', default=False,
+        help="force overwrite of files on recovery")
     parser.add_argument(
         '-d', '--date', default=False, const=True, nargs="?",
         help="")
@@ -73,32 +82,56 @@ def status(ns):
     Status requests only need the local info
     no need to load repo, archive, or sync info"""
     # TODO logging
-    # TODO verify command line arguments
-    # TODO TODO TODO TODO
     print 'status', vars(ns)
-    # args are either local filenames or uuids
-    # load token
-    # check file
-    # - where is it synced
-    # - is it part of an archive?
-    # - when was it synced
-    # - when was it modified
-    pass
+    for fn in ns.files:
+        # then it's a filename
+        mtime = os.path.getmtime(fn)
+        print("{}".format(fn))
+        print("\tmodified: {}".format(time.ctime(mtime)))
+        bc = breadcrumb.find(fn)
+        if bc is None:
+            last_sync = None
+            print("\tsynced: never")
+            continue
+        else:
+            last_sync = bc.time
+            print("\tsynced: {}".format(time.ctime(last_sync)))
+        # TODO is it part of an archive?
+        # TODO is this periodically synced?
+        pass
 
 
 def backup(ns):
     """Process a backup request
     Might be an archive
+
+    all args should be filenames
     """
     print 'backup', vars(ns)
+    for fn in ns.files:
+        # find if files are already tracked (have breadcrumbs)
+        #  if so, use those uuids
+        #  if not, generate a new uuid
+        # is this an archive?
+        # if so, create an Archive to resolve filenames
+        # resolve local and remote filenames
+        # create rsync command
+        # run it
+        pass
     pass
 
 
 def recover(ns):
     """Process a recover request
     Might be an archive
+
+    if -r is a string and uuid then there should be 1 arg
+    if -r is a string and a filename, there might not be an arg
+      the previous could be ambiguous, use -f (force option) to resolve
+    if -r is True, then there should be filenames (NOT uuids)
     """
     print 'recover', vars(ns)
+    # if r is a uuid
     pass
 
 
@@ -106,6 +139,8 @@ def sync(ns):
     """Process a sync request
 
     Synchronize a directory
+
+    all args should be files
     """
     print 'sync', vars(ns)
     pass
@@ -118,9 +153,22 @@ def clone(ns):
     pass
 
 
+def make_uuid(fn):
+    """
+    Check if fn is a uuid
+    if it is, then create a uuid.UUID
+    """
+    if os.path.exists(fn):
+        return fn
+    else:  # TODO make this check more robust
+        return uuid.UUID(fn)
+
+
 def run(args=None):
     parser = build_argument_parser()
     ns = parser.parse_args(args)
+    #ns.files = map(make_uuid, ns.files)
+    # TODO verify command line arguments
     # if -s, then status, process and exit
     if ns.status:
         return status(ns)
